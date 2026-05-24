@@ -1,13 +1,49 @@
 #include <string.h>
 #include "tusb.h"
-#include "keyboard_usb_descriptors.h"
+#include "mouse_usb_descriptors.h"
+
+#ifndef PLAYER_ID
+#define PLAYER_ID 1
+#endif
 
 #define USB_VID 0xCafe
-#define USB_PID 0x4030
+#define USB_PID (0x4020 + PLAYER_ID)
 #define USB_BCD 0x0200
 
+// Eski çalışan çekirdeğe yakın Absolute HID Mouse: buttons + X/Y 0..32767.
 uint8_t const desc_hid_report[] = {
-  TUD_HID_REPORT_DESC_KEYBOARD(HID_REPORT_ID(REPORT_ID_KEYBOARD))
+  0x05, 0x01,
+  0x09, 0x02,
+  0xA1, 0x01,
+  0x85, REPORT_ID_MOUSE,
+  0x09, 0x01,
+  0xA1, 0x00,
+
+  0x05, 0x09,
+  0x19, 0x01,
+  0x29, 0x03,
+  0x15, 0x00,
+  0x25, 0x01,
+  0x95, 0x03,
+  0x75, 0x01,
+  0x81, 0x02,
+  0x95, 0x01,
+  0x75, 0x05,
+  0x81, 0x03,
+
+  0x05, 0x01,
+  0x09, 0x30,
+  0x09, 0x31,
+  0x16, 0x00, 0x00,
+  0x26, 0xFF, 0x7F,
+  0x36, 0x00, 0x00,
+  0x46, 0xFF, 0x7F,
+  0x75, 0x10,
+  0x95, 0x02,
+  0x81, 0x02,
+
+  0xC0,
+  0xC0
 };
 
 uint8_t const * tud_hid_descriptor_report_cb(uint8_t instance) {
@@ -32,8 +68,8 @@ tusb_desc_device_t const desc_device = {
   .bNumConfigurations = 0x01
 };
 
-uint8_t const * tud_descriptor_device_cb(void) {
-  return (uint8_t const*) &desc_device;
+tusb_desc_device_t const * tud_descriptor_device_cb(void) {
+  return &desc_device;
 }
 
 enum {
@@ -52,7 +88,7 @@ enum {
 uint8_t const desc_configuration[] = {
   TUD_CONFIG_DESCRIPTOR(1, ITF_NUM_TOTAL, 0, CONFIG_TOTAL_LEN, TUSB_DESC_CONFIG_ATT_REMOTE_WAKEUP, 100),
   TUD_CDC_DESCRIPTOR(ITF_NUM_CDC, 4, EPNUM_CDC_NOTIF, 8, EPNUM_CDC_OUT, EPNUM_CDC_IN, 64),
-  TUD_HID_DESCRIPTOR(ITF_NUM_HID, 0, HID_ITF_PROTOCOL_KEYBOARD, sizeof(desc_hid_report), EPNUM_HID, CFG_TUD_HID_EP_BUFSIZE, 5)
+  TUD_HID_DESCRIPTOR(ITF_NUM_HID, 0, HID_ITF_PROTOCOL_MOUSE, sizeof(desc_hid_report), EPNUM_HID, CFG_TUD_HID_EP_BUFSIZE, 5)
 };
 
 uint8_t const * tud_descriptor_configuration_cb(uint8_t index) {
@@ -63,8 +99,13 @@ uint8_t const * tud_descriptor_configuration_cb(uint8_t index) {
 char const* string_desc_arr[] = {
   (const char[]) { 0x09, 0x04 },
   "GT Elektronik Yazilim",
-  "GT ARCADE BUTTON KEYBOARD",
-  "GT-BUTTON-KEYBOARD",
+#if PLAYER_ID == 1
+  "GT ARCADE P1 ABSOLUTE MOUSE",
+  "GT-P1-MOUSE",
+#else
+  "GT ARCADE P2 ABSOLUTE MOUSE",
+  "GT-P2-MOUSE",
+#endif
   "GT Arcade CDC"
 };
 

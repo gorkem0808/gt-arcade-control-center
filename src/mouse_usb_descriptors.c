@@ -68,8 +68,8 @@ tusb_desc_device_t const desc_device = {
   .bNumConfigurations = 0x01
 };
 
-tusb_desc_device_t const * tud_descriptor_device_cb(void) {
-  return &desc_device;
+uint8_t const * tud_descriptor_device_cb(void) {
+  return (uint8_t const*) &desc_device;
 }
 
 enum {

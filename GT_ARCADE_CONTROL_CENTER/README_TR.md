@@ -33,7 +33,3 @@ yapılır.
 ## Önemli karar
 
 Mouse Pico'larında klavye HID yoktur. Bu bilinçli yapıldı. Böylece TeknoParrot eski çalışan absolute mouse yapısını daha güvenli algılar.
-
-
-## FIX5
-TinyUSB yeni surumlerinde tud_descriptor_device_cb donus tipi uint8_t const* olmalidir. Bu paket buna gore duzeltilmistir.
