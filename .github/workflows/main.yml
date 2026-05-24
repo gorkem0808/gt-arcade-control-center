@@ -1,0 +1,62 @@
+name: Build GT Arcade Control Center UF2
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ "main", "master", "ana" ]
+
+permissions:
+  contents: read
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout project
+        uses: actions/checkout@v4
+
+      - name: Install build tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake gcc-arm-none-eabi libnewlib-arm-none-eabi build-essential python3 curl unzip
+
+      - name: Download Pico SDK ZIP
+        run: |
+          cd "$GITHUB_WORKSPACE"
+          curl -L -o pico-sdk.zip https://github.com/raspberrypi/pico-sdk/archive/refs/heads/master.zip
+          unzip -q pico-sdk.zip
+          mv pico-sdk-master pico-sdk
+
+      - name: Download TinyUSB ZIP
+        run: |
+          cd "$GITHUB_WORKSPACE"
+          mkdir -p pico-sdk/lib
+          curl -L -o tinyusb.zip https://github.com/hathach/tinyusb/archive/refs/heads/master.zip
+          unzip -q tinyusb.zip
+          rm -rf pico-sdk/lib/tinyusb
+          mv tinyusb-master pico-sdk/lib/tinyusb
+          test -f pico-sdk/lib/tinyusb/src/tusb.h
+
+      - name: Configure project
+        run: |
+          cmake -S "$GITHUB_WORKSPACE" -B "$GITHUB_WORKSPACE/build" -DPICO_SDK_PATH="$GITHUB_WORKSPACE/pico-sdk" -DPICO_BOARD=pico
+
+      - name: Build UF2
+        run: |
+          cmake --build "$GITHUB_WORKSPACE/build" --parallel 2
+
+      - name: Collect UF2 files
+        run: |
+          mkdir -p "$GITHUB_WORKSPACE/out"
+          find "$GITHUB_WORKSPACE/build" -name "*.uf2" -exec cp {} "$GITHUB_WORKSPACE/out/" \;
+          ls -la "$GITHUB_WORKSPACE/out"
+
+      - name: Upload UF2 files
+        uses: actions/upload-artifact@v4
+        with:
+          name: gt_arcade_control_center_uf2
+          path: out/*.uf2
